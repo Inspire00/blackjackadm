@@ -1,4 +1,4 @@
-const { db } = require('./lib/firebaseAdmin');
+/*const { db } = require('./lib/firebaseAdmin');
 
 async function populateFirestore() {
   try {
