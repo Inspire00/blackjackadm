@@ -9,15 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
+    "firebase": "^11.6.1",
+    "firebase-admin": "^13.3.0",
+    "googleapis": "^148.0.0",
+    "lucide-react": "^0.513.0",
+    "next": "15.3.1",
     "react": "^19.0.0",
+    "react-datepicker": "^8.4.0",
     "react-dom": "^19.0.0",
-    "next": "15.3.1"
+    "react-tabs": "^6.1.0",
+    "recharts": "^2.15.3"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4"
   }
 }
