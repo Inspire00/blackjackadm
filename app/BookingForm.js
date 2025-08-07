@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function BookingForm({ waiters }) {
+  // Initialize showWaiters to true for debugging purposes, so the list is always attempted to be shown
+  const [showWaiters, setShowWaiters] = useState(true); // Keeping true for now, can revert later
   const [formData, setFormData] = useState({
     date: '',
     clientName: '',
@@ -13,8 +15,16 @@ export default function BookingForm({ waiters }) {
     notes: '',
     selectedWaiters: [],
   });
-  const [showWaiters, setShowWaiters] = useState(false);
   const [message, setMessage] = useState('');
+
+  // Add a useEffect to log the waiters prop whenever it changes
+  useEffect(() => {
+    console.log('[BookingForm useEffect] Waiters prop updated:', waiters);
+    if (!waiters || waiters.length === 0) {
+      console.warn('[BookingForm useEffect] Waiters prop is empty or null/undefined.');
+    }
+  }, [waiters]);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -91,7 +101,8 @@ export default function BookingForm({ waiters }) {
   };
 
   return (
-    <div className="w-full max-w-md ml-100 bg-white p-6 rounded-lg shadow-md">
+    // Removed ml-100 and added mx-auto for centering, and relative for potential z-index context
+    <div className="w-full max-w-md mx-auto bg-white p-6 rounded-lg shadow-md relative">
       <h2 className="text-xl font-semibold mb-4 text-[#ea176b] tracking-[-.01em]">Create Booking</h2>
       <div className="mb-4">
         <label className="block text-sm font-medium font-semibold text-[#104845] tracking-[-.01em]">
@@ -167,6 +178,7 @@ export default function BookingForm({ waiters }) {
         />
       </div>
       <div className="mb-4">
+        {/* The button now just toggles, but showWaiters is initially true for debugging */}
         <button
           className="w-full bg-[#b4f6cb] text-gray-800 rounded-full h-10 px-4 font-medium text-sm hover:bg-gray-300 transition-colors"
           onClick={() => setShowWaiters(!showWaiters)}
@@ -174,21 +186,27 @@ export default function BookingForm({ waiters }) {
           {showWaiters ? 'Hide Waiters' : 'Select Waiters'}
         </button>
         {showWaiters && (
-          <div className="mt-2 max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2">
-            {waiters.map((waiter, index) => (
-              <div key={`${waiter.id}-${index}`} className="flex items-center mb-2">
-                <input
-                  type="checkbox"
-                  id={`waiter-${waiter.id}`}
-                  checked={formData.selectedWaiters.includes(waiter.id)}
-                  onChange={() => handleWaiterToggle(waiter.id)}
-                  className="mr-2"
-                />
-                <label htmlFor={`waiter-${waiter.id}`} className="text-sm text-[#104845]">
-                  {waiter.name || waiter.id}
-                </label>
-              </div>
-            ))}
+          // Added z-10 for layering, ensuring it's above other elements if there's a conflict
+          <div className="mt-2 max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2 z-10">
+            {console.log('[BookingForm Render] Waiters array before map:', waiters)}
+            {Array.isArray(waiters) && waiters.length > 0 ? (
+              waiters.map((waiter) => (
+                <div key={waiter.id} className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id={`waiter-${waiter.id}`}
+                    checked={formData.selectedWaiters.includes(waiter.id)}
+                    onChange={() => handleWaiterToggle(waiter.id)}
+                    className="mr-2"
+                  />
+                  <label htmlFor={`waiter-${waiter.id}`} className="text-sm text-[#104845]">
+                    {waiter.name || waiter.id}
+                  </label>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No waiters available to select.</p>
+            )}
           </div>
         )}
       </div>
