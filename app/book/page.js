@@ -1,3 +1,6 @@
+'use client';
+
+
 import { db } from '../lib/firebaseAdmin';
 import BookingForm from '../BookingForm';
 
