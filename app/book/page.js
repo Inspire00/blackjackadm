@@ -1,41 +1,80 @@
-'use client';
+'use client'; // This directive makes this a client component
 
+import { useState, useEffect } from 'react';
+import BookingForm from '../BookingForm'; // Ensure BookingForm is also a client component
 
-import { db } from '../lib/firebaseAdmin';
-import BookingForm from '../BookingForm';
+export default function Home() {
+  const [waiters, setWaiters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-export default async function Home() {
-  const waitersSnapshot = await db.collection('waiters').get();
-  const eventsSnapshot = await db.collection('events').get();
+  useEffect(() => {
+    const fetchWaiters = async () => {
+      try {
+        console.log('[Home] Attempting to fetch waiters from /api/waiters');
+        const response = await fetch('/api/waiters');
 
-  const waiters = waitersSnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      email: data.email,
-      name: data.name,
-      fcmToken: data.fcmToken,
-      updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : null,
+        if (!response.ok) {
+          const errorText = await response.text(); // Get raw error text for debugging
+          console.error(`[Home] HTTP error! Status: ${response.status}, Details: ${errorText}`);
+          throw new Error(`Failed to fetch waiters: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('[Home] Successfully fetched waiters data:', data);
+
+        // Ensure data.waiters is an array, default to empty if not
+        if (data && Array.isArray(data.waiters)) {
+          setWaiters(data.waiters);
+        } else {
+          console.warn('[Home] Fetched data.waiters is not an array or is missing:', data);
+          setWaiters([]); // Set to empty array if data is not as expected
+        }
+
+      } catch (err) {
+        console.error('[Home] Error fetching waiters:', err);
+        setError(`Failed to load waiters: ${err.message}`);
+      } finally {
+        setLoading(false); // Always set loading to false after fetch attempt
+      }
     };
-  });
 
-  console.log('[Home] Fetched waiters:', waiters); // Add logging
+    fetchWaiters();
+  }, []); // Empty dependency array means this effect runs once on mount
 
-  const events = eventsSnapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      eventId: data.eventId || doc.id, // Use eventId if renamed, fallback to doc.id
-      name: data.name,
-      date: data.date,
-      location: data.location,
-    };
-  });
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <p className="text-lg text-gray-700">Loading waiters list... 🔄</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <p className="text-lg text-red-600">Error: {error} ❌</p>
+        <p className="text-sm text-gray-500 mt-2">Please check your Vercel logs for `/api/waiters`.</p>
+      </div>
+    );
+  }
+
+  // If no waiters are loaded and there's no error, display a message
+  if (waiters.length === 0) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <p className="text-lg text-gray-700">No waiters found. Please add some! 🤷‍♂️</p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1>Booking System</h1>
-      <BookingForm waiters={waiters} events={events} />
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md overflow-y-auto max-h-screen">
+        <h1 className="text-xl font-semibold mb-4 text-[#ea176b] tracking-[-.01em]">Booking System</h1>
+        {/* Pass fetched waiters data to BookingForm */}
+        <BookingForm waiters={waiters} />
+      </div>
     </div>
   );
 }
