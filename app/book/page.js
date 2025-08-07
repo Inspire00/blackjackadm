@@ -5,7 +5,8 @@ import BookingForm from '../BookingForm'; // Assuming BookingForm is also a clie
 
 export default function Home() {
   const [waiters, setWaiters] = useState([]);
-  const [events, setEvents] = useState([]);
+  // Removed events state as it's not used by BookingForm and causes a 404 error.
+  // const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -26,27 +27,27 @@ export default function Home() {
       }
     };
 
-    // Function to fetch events (if needed, otherwise remove)
-    const fetchEvents = async () => {
-      try {
-        // Assuming you have a /api/events endpoint or similar
-        const response = await fetch('/api/events'); // You might need to create this API route if it doesn't exist
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setEvents(data.events || []);
-      } catch (err) {
-        console.error('Error fetching events:', err);
-        setError('Failed to load events.');
-      }
-    };
+    // Removed the fetchEvents function as it's not needed and causing a 404.
+    // const fetchEvents = async () => {
+    //   try {
+    //     const response = await fetch('/api/events');
+    //     if (!response.ok) {
+    //       throw new Error(`HTTP error! status: ${response.status}`);
+    //     }
+    //     const data = await response.json();
+    //     setEvents(data.events || []);
+    //   } catch (err) {
+    //     console.error('Error fetching events:', err);
+    //     setError('Failed to load events.');
+    //   }
+    // };
 
-    // Call both fetch functions
+    // Call fetchWaiters only
     const loadData = async () => {
       setLoading(true);
       setError(null);
-      await Promise.all([fetchWaiters(), fetchEvents()]);
+      // Only await fetchWaiters, as fetchEvents is removed.
+      await fetchWaiters();
       setLoading(false);
     };
 
@@ -65,8 +66,8 @@ export default function Home() {
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md overflow-y-auto max-h-screen">
         <h1 className="text-xl font-semibold mb-4 text-[#ea176b] tracking-[-.01em]">Booking System</h1>
-        {/* Pass fetched data to BookingForm */}
-        <BookingForm waiters={waiters} events={events} />
+        {/* Pass fetched waiters data to BookingForm */}
+        <BookingForm waiters={waiters} />
       </div>
     </div>
   );
