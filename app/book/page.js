@@ -16,6 +16,8 @@ export default async function Home() {
     };
   });
 
+  console.log('[Home] Fetched waiters:', waiters); // Add logging
+
   const events = eventsSnapshot.docs.map(doc => {
     const data = doc.data();
     return {
