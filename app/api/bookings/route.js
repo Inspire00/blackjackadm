@@ -1,9 +1,7 @@
 import admin from 'firebase-admin';
-import { db } from '../../lib/firebaseAdmin';
+import { db } from '../../lib/firebaseAdmin'; // Ensure this path is correct for your singleton setup
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
-
-
 
 async function getAccessToken() {
   try {
@@ -32,17 +30,20 @@ export async function POST(req) {
     // Fetch all waiter details to get names
     const waiterDetails = [];
     for (const waiterId of waiterIds) {
-      console.log('[Bookings API] Fetching waiter with ID:', waiterId);
+      console.log(`[Bookings API] Attempting to fetch waiter details for ID: ${waiterId}`);
       const waiterDoc = await db.collection('waiters').doc(waiterId).get();
+
       if (waiterDoc.exists) {
         const waiter = waiterDoc.data();
+        console.log(`[Bookings API] Found waiter: ${waiterId}, Name: ${waiter.name}`);
         waiterDetails.push({ id: waiterId, name: waiter.name || waiterId, fcmToken: waiter.fcmToken });
       } else {
-        console.warn('[Bookings API] Waiter not found for ID:', waiterId);
+        console.warn(`[Bookings API] Waiter document NOT FOUND for ID: ${waiterId}`);
       }
     }
 
     if (waiterDetails.length === 0) {
+      console.warn('[Bookings API] No valid waiters found after fetching details.');
       return NextResponse.json(
         { error: 'No valid waiters found', bookingId: null },
         { status: 400 }
@@ -52,17 +53,23 @@ export async function POST(req) {
     // Prepare arrays for all waiter IDs and names
     const allWaiterIds = waiterDetails.map((w) => w.id);
     const allWaiterNames = waiterDetails.map((w) => w.name);
+    console.log('[Bookings API] Processed allWaiterIds:', allWaiterIds);
+    console.log('[Bookings API] Processed allWaiterNames:', allWaiterNames);
+
 
     const bookingIds = [];
 
     // Create bookings for each waiter with event details and waiter name
     for (const waiter of waiterDetails) {
-      console.log('[Bookings API] Processing waiter:', waiter.id);
+      console.log('[Bookings API] Processing booking for waiter:', waiter.id);
+      // Re-fetching waiterDoc here is redundant if waiterDetails already contains necessary info,
+      // but keeping it for now to match original logic if there's a specific reason.
+      // If `fcmToken` is always in `waiterDetails`, this `get()` can be removed.
       const waiterDoc = await db.collection('waiters').doc(waiter.id).get();
       const waiterData = waiterDoc.data();
 
       if (!waiterData || !waiterData.fcmToken) {
-        console.warn('[Bookings API] No valid FCM token for waiterId:', waiter.id);
+        console.warn('[Bookings API] No valid FCM token for waiterId:', waiter.id, 'Skipping notification.');
         continue; // Skip this waiter, but continue with others
       }
 
@@ -91,10 +98,10 @@ export async function POST(req) {
       let accessToken;
       try {
         accessToken = await getAccessToken();
-        console.log('[Bookings API] Access token generated successfully');
+        console.log('[Bookings API] Access token generated successfully for FCM.');
       } catch (tokenError) {
-        console.error('[Bookings API] Failed to generate access token:', tokenError.message);
-        continue;
+        console.error('[Bookings API] Failed to generate access token for FCM:', tokenError.message);
+        continue; // Skip notification for this waiter
       }
 
       const sentTime = Date.now();
@@ -144,18 +151,26 @@ export async function POST(req) {
         if (!response.ok) {
           console.error('[Bookings API] FCM notification failed:', data.error || data);
         } else {
-          console.log('[Bookings API] Notification sent to waiter:', waiter.id);
+          console.log('[Bookings API] Notification sent successfully to waiter:', waiter.id);
         }
       } catch (fcmError) {
-        console.error('[Bookings API] FCM notification failed:', fcmError.message);
+        console.error('[Bookings API] FCM notification fetch failed:', fcmError.message);
       }
+    }
+
+    if (bookingIds.length === 0) {
+      console.warn('[Bookings API] No bookings were successfully created.');
+      return NextResponse.json(
+        { error: 'No bookings were created. Check waiter FCM tokens or other issues.', bookingId: null },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ bookingId: bookingIds[0], eventId });
   } catch (error) {
     console.error('[Bookings API] Error creating booking:', error);
     return NextResponse.json(
-      { error: 'Failed to create booking: ' + error.message },
+      { error: 'Failed to create booking: ' + error.message, debug: error.stack },
       { status: 500 }
     );
   }
