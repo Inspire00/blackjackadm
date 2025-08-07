@@ -1,14 +1,30 @@
-import admin from 'firebase-admin';
-import { db } from '../../lib/firebaseAdmin';
+// For Next.js App Router (app/api/waiters/route.js)
+// If you are using Pages Router, this would be in pages/api/waiters.js
+import { db } from '../../lib/firebaseAdmin'; // Adjust path as necessary based on your file structure
 import { NextResponse } from 'next/server';
 
-export async function GET(req) {
+export async function GET() {
   try {
     console.log('[Waiters API] Received GET request for all waiters.');
-    const waitersSnapshot = await db.collection('waiters').orderBy('name').get();
+    // Removed .orderBy('name') to test if it resolves the blank page issue.
+    // This often requires a Firestore index, which might be missing on Vercel.
+    const waitersSnapshot = await db.collection('waiters').get();
     const waiters = [];
     waitersSnapshot.forEach((doc) => {
-      waiters.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      waiters.push({
+        id: doc.id,
+        email: data.email || null,
+        name: data.name || doc.id, // Fallback to ID if name is missing
+        fcmToken: data.fcmToken || null,
+        surname: data.surname || null,
+        sex: data.sex || null,
+        age: data.age || null,
+        nationality: data.nationality || null,
+        phone: data.phone || null,
+        createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+        // Add any other fields you need from the waiter document
+      });
     });
     console.log('[Waiters API] Fetched', waiters.length, 'waiters.');
     return NextResponse.json({ waiters });
