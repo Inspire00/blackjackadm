@@ -64,7 +64,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="w-full max-w-md p-8 rounded-2xl shadow-xl bg-gray-950 border border-gray-800">
-        <h2 className="text-3xl font-bold text-center mb-6 text-[#b4f6cb]">BlackJack Admin Login</h2>
+        <h2 className="text-3xl font-bold text-center mb-6 text-[#b4f6cb]">FlexStaff Admin Login</h2>
         
         <div className="flex justify-center mb-6">
           <Image
